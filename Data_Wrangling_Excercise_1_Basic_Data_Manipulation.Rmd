@@ -1,0 +1,74 @@
+---
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Wrangling Exercise 1: Basic Data Manipulation
+
+"Data Wrangling Excercise 1: Refine"
+library(dplyr)
+library(tidyr)
+#0: Load the data in RStudio
+purchase2 <- read.csv("refine_original.csv")
+
+#1: Clean up brand names
+# create a vector of company names
+company_names <- purchase2$company
+
+#identify the vector positions for the companies 
+phillips_names <- grep("^p|^f", company_names, ignore.case = TRUE)
+akzo_names <- grep("^a", company_names, ignore.case = TRUE)
+van_houten_names <- grep("^v", company_names, ignore.case = TRUE)
+unilever_names <- grep("^u", company_names, ignore.case = TRUE)
+
+# replace with correct names
+company_names[phillips_names] <- "Phillips"
+company_names[akzo_names] <- "Akzo"
+company_names[van_houten_names] <- "Van Houten"
+company_names[unilever_names] <- "Unilever"
+
+# insert back into data frame
+purchase2$company <- company_names
+purchase2
+
+
+#2: Separate product code and number
+
+purchase_df <- separate(purchase2, Product.code...number, c("product_code", "product_number"), sep = "-", remove = TRUE,
+                        convert = FALSE, extra = "warn", fill = "warn")
+
+
+#3: Add product categories
+product_category <- factor(purchase_df$product_code, c("p", "v", "x","q"),labels = c("Smartphone", "TV", "Laptop", "Tablet"))
+
+purchase_df <- cbind(purchase_df, product_category)
+
+
+#4: Add full address for geocoding
+
+full_address <- as.character(paste(purchase_df$address, purchase_df$city, purchase_df$country, sep = ","))
+purchase_df <- cbind(purchase_df, full_address)
+
+#5: Create dummy variables for company and product category
+company_phillips <- factor(purchase_df$company, "Phillips",labels = "1,1")
+purchase_df <- cbind(purchase_df, company_phillips)
+company_azko <- factor(purchase_df$company, "Azko",labels = "1,0")
+purchase_df <- cbind(purchase_df, company_azko)
+company_van_houten <- factor(purchase_df$company, "Van Houten",labels = "0,1")
+purchase_df <- cbind(purchase_df, company_van_houten)
+company_unilever <- factor(purchase_df$company, "Unilever",labels = "0,0")
+purchase_df <- cbind(purchase_df, company_unilever)
+product_smartphone <- factor(purchase_df$product_category, "Smartphone",labels = "1,1")
+purchase_df <- cbind(purchase_df, product_smartphone)
+product_tv <- factor(purchase_df$product_category, "TV",labels = "1,0")
+purchase_df <- cbind(purchase_df, product_tv)
+product_laptop <- factor(purchase_df$product_category, "Laptop",labels = "0,1")
+purchase_df <- cbind(purchase_df, product_laptop)
+product_tablet <- factor(purchase_df$product_category, "Tablet",labels = "0,0")
+purchase_df <- cbind(purchase_df, product_tablet)
+
+write.table(purchase_df, file = "refine_clean.csv", sep = ",")
+write.csv(purchase_df, file = "refine_clean.csv")
